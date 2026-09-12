@@ -73,12 +73,9 @@ export function ThumbnailMaker({ imageUrl, lyrics, meta }: ThumbnailMakerProps) 
       ctx.fillText(trimText(ctx, hook, 610), 98, 222)
 
       ctx.fillStyle = '#fff'
-      const titleLayout = fitWrappedTitle(ctx, title || '곡 제목', 680, 2)
-      ctx.font = `700 ${titleLayout.fontSize}px "Malgun Gothic", sans-serif`
-      const titleLineHeight = Math.round(titleLayout.fontSize * 1.19)
-      titleLayout.lines.forEach((value, index) => ctx.fillText(value, 98, 316 + index * titleLineHeight))
-      const titleLines = titleLayout.lines.length
-      const categoryY = titleLines === 1 ? 408 : 316 + titleLineHeight * 2 - 16
+      ctx.font = '700 91px "Malgun Gothic", sans-serif'
+      const titleLines = drawWrappedText(ctx, title || '곡 제목', 98, 316, 680, 108, 2)
+      const categoryY = titleLines === 1 ? 408 : 516
 
       ctx.fillStyle = GOLD
       ctx.fillRect(58, 184, 5, titleLines === 1 ? 282 : 390)
@@ -337,38 +334,21 @@ function trimText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return `${value}…`
 }
 
-function fitWrappedTitle(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number) {
-  const maxFontSize = 91
-  const minFontSize = 68
-  const value = text.trim()
-
-  for (let fontSize = maxFontSize; fontSize >= minFontSize; fontSize -= 1) {
-    ctx.font = `700 ${fontSize}px "Malgun Gothic", sans-serif`
-    const lines = wrapText(ctx, value, maxWidth)
-    if (lines.length <= maxLines) return { fontSize, lines }
-  }
-
-  ctx.font = `700 ${minFontSize}px "Malgun Gothic", sans-serif`
-  const lines = wrapText(ctx, value, maxWidth)
-  const visibleLines = lines.slice(0, maxLines)
-  if (lines.length > maxLines) {
-    visibleLines[maxLines - 1] = trimText(ctx, lines.slice(maxLines - 1).join(''), maxWidth)
-  }
-  return { fontSize: minFontSize, lines: visibleLines }
-}
-
-function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {
+function drawWrappedText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number, maxLines: number) {
+  const chars = [...text.trim()]
   const lines: string[] = []
   let line = ''
-  for (const char of [...text]) {
+  for (const char of chars) {
     const test = line + char
     if (line && ctx.measureText(test).width > maxWidth) {
       lines.push(line)
       line = char
-    } else {
-      line = test
-    }
+      if (lines.length === maxLines - 1) break
+    } else line = test
   }
-  if (line) lines.push(line)
-  return lines.length > 0 ? lines : ['']
+  const consumed = lines.join('').length + line.length
+  if (consumed < chars.length) line = trimText(ctx, chars.slice(consumed - line.length).join(''), maxWidth)
+  lines.push(line)
+  lines.slice(0, maxLines).forEach((value, index) => ctx.fillText(value, x, y + index * lineHeight))
+  return Math.min(lines.length, maxLines)
 }

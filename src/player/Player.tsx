@@ -1,6 +1,7 @@
 import { useRef, useCallback } from 'react'
 import { useAudioSync } from './useAudioSync'
 import { LyricDisplay } from './LyricDisplay'
+import { fitTitleFontSize } from '../utils/titleFont'
 import { BarVisualizer } from './BarVisualizer'
 import type { LyricLine } from '../lrc/types'
 import type { AspectRatio } from '../exporter/canvasRenderer'
@@ -91,7 +92,7 @@ export function Player({ audioUrl, imageUrl, lyrics, ratio, bgPosition, onBgPosi
         </div>
         {meta.title && (
           <div className="player__cd-info">
-            <div className="player__cd-title">{meta.title}</div>
+            <div className="player__cd-title" style={{ fontSize: fitTitleFontSize(meta.title, 20, 190) }}>{meta.title}</div>
             {meta.album && <div className="player__cd-album">{meta.album} <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle' }}><polyline points="9,6 15,12 9,18" /></svg></div>}
             {meta.artist && <div className="player__cd-artist">{meta.artist}</div>}
             <span className="player__cd-vip">HOYA</span>

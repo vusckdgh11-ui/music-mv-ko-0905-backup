@@ -12,6 +12,7 @@ import { RippleCanvas } from '../RippleCanvas'
 import { SnowCanvas } from '../SnowCanvas'
 import { AmbientCanvas, isAmbientEffect } from '../AmbientCanvas'
 import { SpectrumVisualizer } from '../SpectrumVisualizer'
+import { fitTitleFontSize } from '../../utils/titleFont'
 
 const LAYOUT = { fontSizeActive: 42, fontSizeInactive: 28, lineHeight: 80 } as const
 
@@ -51,7 +52,7 @@ export const Pixel16x9: React.FC<CompositionProps> = ({
   const leftW = Math.round(width * 0.50)
   const pad = Math.round(width * 0.10)
 
-  const titleFontSize = Math.round(width * 0.032)
+  const titleFontSize = fitTitleFontSize(meta.title, Math.round(width * 0.032), leftW - pad * 2)
   const albumFontSize = Math.round(width * 0.022)
   const songInfoH = Math.round(height * 0.12)
 
