@@ -63,7 +63,7 @@ export default function App() {
   const [bgPosition] = useState({ x: 50, y: 50 })
   const [exportConfig, setExportConfig] = useState<ExportConfig>(DEFAULT_EXPORT)
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [showMeta, setShowMeta] = useState(false)
+  const [showMeta, setShowMeta] = useState(true)
   const [style, setStyle] = useState<'normal' | 'pixel'>('normal')
   const [effect, setEffect] = useState<'ripple' | 'snow' | 'rain' | 'particles' | 'stars' | 'fog' | 'embers' | 'dust' | 'fireflies' | 'bokeh' | 'zoom' | 'none'>('none')
   const [effectDirection, setEffectDirection] = useState<'natural' | 'right' | 'left'>('natural')
