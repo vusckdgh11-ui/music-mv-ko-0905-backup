@@ -10,6 +10,7 @@ import type { VisualizerStyle } from '../remotion/SpectrumVisualizer'
 const FPS = 30
 
 export interface ExportOptions {
+  renderId?: string
   bgUrl: string
   audioVideoUrl: string
   audioFile: File
@@ -61,6 +62,7 @@ function preloadImage(url: string): Promise<void> {
 }
 
 export async function exportVideo({
+  renderId,
   bgUrl,
   audioVideoUrl,
   audioFile,
@@ -80,7 +82,10 @@ export async function exportVideo({
   const cfg = exportConfig ?? defaultCfg
 
   onProgress?.(0, i18n.t('loadingFiles'))
-  await preloadImage(bgUrl)
+  await Promise.all([
+    preloadImage(bgUrl),
+    document.fonts?.ready ?? Promise.resolve(),
+  ])
 
   const [fullDuration, frequencyBars] = await Promise.all([
     getAudioDuration(audioFile),
@@ -125,7 +130,7 @@ export async function exportVideo({
 
   const { getBlob } = await renderMediaOnWeb({
     composition: {
-      id: 'LyricVideo',
+      id: renderId || 'LyricVideo',
       component: LyricVideo as unknown as React.FC<Record<string, unknown>>,
       durationInFrames: totalFrames,
       fps: FPS,

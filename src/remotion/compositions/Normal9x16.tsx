@@ -8,7 +8,7 @@ import { RippleCanvas } from '../RippleCanvas'
 import { SnowCanvas } from '../SnowCanvas'
 import { AmbientCanvas, isAmbientEffect } from '../AmbientCanvas'
 import { SpectrumVisualizer } from '../SpectrumVisualizer'
-import { fitTitleFontSize } from '../../utils/titleFont'
+import { fitTitleFontSize, splitTitleLines, truncateTextToWidth } from '../../utils/titleFont'
 
 const LAYOUT = { fontSizeActive: 58, fontSizeInactive: 40, lineHeight: 100 } as const
 
@@ -46,7 +46,10 @@ export const Normal9x16: React.FC<CompositionProps> = ({
   const activeIndex = findCurrentLyricIndex(lyrics, currentTime)
 
   const titleFontSize = fitTitleFontSize(meta.title, Math.round(width * 0.055), Math.round(width * 0.41))
+  const titleLineHeight = Math.round(titleFontSize * 1.3)
+  const titleLines = splitTitleLines(meta.title, titleFontSize, Math.round(width * 0.41))
   const albumFontSize = Math.round(width * 0.0405)
+  const albumText = truncateTextToWidth(meta.album, albumFontSize, Math.round(width * 0.41) - Math.round(width * 0.04) - 4)
   const artistFontSize = Math.round(width * 0.0439)
   const vipFontSize = Math.round(width * 0.0338)
 
@@ -289,30 +292,31 @@ export const Normal9x16: React.FC<CompositionProps> = ({
             fontWeight: 700,
             color: '#fff',
             overflow: 'hidden',
-            lineHeight: `${Math.round(titleFontSize * 1.3)}px`,
+            lineHeight: `${titleLineHeight}px`,
+            height: `${titleLineHeight * titleLines.length}px`,
             width: '100%',
           }}>
-            {meta.title}
+            {titleLines.map((line, index) => (
+              <span key={index} style={{ position: 'absolute', left: 0, top: index * titleLineHeight, width: '100%', height: titleLineHeight, lineHeight: `${titleLineHeight}px`, whiteSpace: 'nowrap', overflow: 'hidden' }}>{line}</span>
+            ))}
           </div>
           {meta.album && (
             <div data-name="song-album" style={{
               position: 'absolute',
-              top: cdDiameter * 0.15 + Math.round(titleFontSize * 1.3) + 2,
+              top: cdDiameter * 0.15 + titleLineHeight * titleLines.length + 2,
               left: 0,
-              fontSize: albumFontSize,
-              color: 'rgba(255,255,255,0.45)',
+              display: 'flex',
+              alignItems: 'center',
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
               width: '100%',
             }}>
-              {meta.album}
-              <svg data-name="album-chevron" width={Math.round(width * 0.04)} height={Math.round(width * 0.04)} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginLeft: 4 }}><polyline points="9,6 15,12 9,18" /></svg>
+              <span style={{ fontSize: albumFontSize, color: 'rgba(255,255,255,0.45)', overflow: 'hidden', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{albumText}</span>
+              <svg data-name="album-chevron" width={Math.round(width * 0.04)} height={Math.round(width * 0.04)} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: 4 }}><polyline points="9,6 15,12 9,18" /></svg>
             </div>
           )}
           <div data-name="vip-badge" style={{
             position: 'absolute',
-            top: cdDiameter * 0.15 + Math.round(titleFontSize * 1.3) + 2 + albumFontSize + 4 + artistFontSize + 6,
+            top: cdDiameter * 0.15 + titleLineHeight * titleLines.length + 2 + albumFontSize + 4 + artistFontSize + 6,
             left: 0,
             padding: `${Math.round(vipFontSize * 0.1)}px ${Math.round(vipFontSize * 0.6)}px`,
             fontSize: vipFontSize,

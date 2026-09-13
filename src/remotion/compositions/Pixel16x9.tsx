@@ -6,13 +6,13 @@ import type { CompositionProps } from '../types'
 import { playIconUrl, pauseIconUrl } from '../iconUrl'
 import { PixelBackgroundCanvas } from '../pixel/PixelBackgroundCanvas'
 import { PixelImg } from '../pixel/PixelImg'
-import { PIXEL_SIZE } from '../pixel/constants'
+import { PIXEL_FONT_FAMILY, PIXEL_SIZE } from '../pixel/constants'
 import { pixelText, snapToGrid } from '../pixel/helpers'
 import { RippleCanvas } from '../RippleCanvas'
 import { SnowCanvas } from '../SnowCanvas'
 import { AmbientCanvas, isAmbientEffect } from '../AmbientCanvas'
 import { SpectrumVisualizer } from '../SpectrumVisualizer'
-import { fitTitleFontSize } from '../../utils/titleFont'
+import { fitTitleFontSize, splitTitleLines, truncateTextToWidth } from '../../utils/titleFont'
 
 const LAYOUT = { fontSizeActive: 42, fontSizeInactive: 28, lineHeight: 80 } as const
 
@@ -52,8 +52,11 @@ export const Pixel16x9: React.FC<CompositionProps> = ({
   const leftW = Math.round(width * 0.50)
   const pad = Math.round(width * 0.10)
 
-  const titleFontSize = fitTitleFontSize(meta.title, Math.round(width * 0.032), leftW - pad * 2)
+  const titleFontSize = fitTitleFontSize(meta.title, Math.round(width * 0.032), leftW - pad * 2, PIXEL_FONT_FAMILY)
+  const titleLineHeight = Math.round(titleFontSize * 1.6)
+  const titleLines = splitTitleLines(meta.title, titleFontSize, leftW - pad * 2, 2, PIXEL_FONT_FAMILY)
   const albumFontSize = Math.round(width * 0.022)
+  const albumText = truncateTextToWidth(meta.album, albumFontSize, leftW - pad * 2 - albumFontSize * 1.2, PIXEL_FONT_FAMILY)
   const songInfoH = Math.round(height * 0.12)
 
   const cdAreaH = Math.round(height * 0.40)
@@ -230,10 +233,15 @@ export const Pixel16x9: React.FC<CompositionProps> = ({
         }}>
           <div data-name="song-title" style={{
             ...pixelText(titleFontSize, 700),
-            lineHeight: 1.6,
+            lineHeight: `${titleLineHeight}px`,
+            height: `${titleLineHeight * titleLines.length}px`,
             overflow: 'hidden',
           }}>
-            {meta.title}
+            {titleLines.map((line, index) => (
+              <span key={index} style={{ position: 'absolute', left: 0, top: index * titleLineHeight, width: '100%', height: titleLineHeight, lineHeight: `${titleLineHeight}px`, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                {line}
+              </span>
+            ))}
           </div>
           {meta.album && (
             <div data-name="song-album-row" style={{ display: 'flex', alignItems: 'center', marginTop: 6, width: '100%' }}>
@@ -242,8 +250,10 @@ export const Pixel16x9: React.FC<CompositionProps> = ({
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
+                flex: 1,
+                minWidth: 0,
               }}>
-                {meta.album}
+                {albumText}
               </span>
               <svg data-name="album-chevron" width={Math.round(albumFontSize * 1.1)} height={Math.round(albumFontSize * 1.1)} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" style={{ flexShrink: 0, marginLeft: 0 }}><polyline points="9,6 15,12 9,18" /></svg>
               {/*<div data-name="vip-badge" style={{*/}

@@ -72,6 +72,7 @@ export default function App() {
   const [exportMsg, setExportMsg] = useState('')
   const [previewUrl, setPreviewUrl] = useState('')
   const audioFileRef = useRef<File | null>(null)
+  const audioObjectUrlRef = useRef('')
   const imageFileRef = useRef<File | null>(null)
   const audioVideoUrlRef = useRef<string>('')
   const [muted] = useState(true)
@@ -84,6 +85,7 @@ export default function App() {
   const [folderMsg, setFolderMsg] = useState('')
   const folderInputRef = useRef<HTMLInputElement>(null)
   const audioLoadIdRef = useRef(0)
+  const renderIdRef = useRef(0)
   const trackRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -105,9 +107,10 @@ export default function App() {
     }
   }, [audioDuration])
 
-  const handleLRC = useCallback((file: File) => {
+  const handleLRC = useCallback((file: File, expectedLoadId?: number) => {
     const reader = new FileReader()
     reader.onload = (e) => {
+      if (expectedLoadId !== undefined && expectedLoadId !== audioLoadIdRef.current) return
       const text = e.target?.result as string
       const parsed = parseLRC(text)
       setLyrics(parsed.lyrics)
@@ -127,12 +130,16 @@ export default function App() {
   const handleAudio = useCallback((file: File) => {
     const loadId = ++audioLoadIdRef.current
     audioFileRef.current = file
-    if (audioUrl) URL.revokeObjectURL(audioUrl)
+    if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current)
     const url = URL.createObjectURL(file)
+    audioObjectUrlRef.current = url
     setAudioUrl(url)
     audioVideoUrlRef.current = url
     setPreviewUrl('')
+    setLyrics([])
     setFrequencyBars([])
+    setAudioDuration(0)
+    setExportConfig((c) => ({ ...c, endTime: 0 }))
     setInputMsg('')
     const name = cleanSongTitle(file.name.replace(/\.[^.]+$/, ''))
     setMeta((m) => ({ ...m, title: name, album: name }))
@@ -158,7 +165,8 @@ export default function App() {
       setFrequencyBars([])
       setFreqLoading(false)
     })
-  }, [audioUrl, t])
+    return loadId
+  }, [t])
 
   const handleImage = useCallback((file: File) => {
     imageFileRef.current = file
@@ -180,8 +188,8 @@ export default function App() {
       .map((extension) => sameSongFiles.find((file) => fileExtension(file) === extension))
       .find(Boolean)
 
-    handleAudio(audioFile)
-    if (lyricFile) handleLRC(lyricFile)
+    const loadId = handleAudio(audioFile)
+    if (lyricFile) handleLRC(lyricFile, loadId)
     if (imageFile) handleImage(imageFile)
     setFolderSongPath(songPath)
     setFolderMsg(`음원 연결 완료 · 가사 ${lyricFile ? '✓' : '없음'} · 배경 이미지 ${imageFile ? '✓' : '없음'}`)
@@ -204,7 +212,7 @@ export default function App() {
 
   const previewInputProps = useMemo(() => ({
     bgUrl: imageUrl,
-    audioVideoUrl: audioVideoUrlRef.current || '',
+    audioVideoUrl: audioUrl,
     lyrics,
     meta,
     ratio,
@@ -216,7 +224,7 @@ export default function App() {
     effectDirection,
     visualizerStyle,
     style,
-  }), [imageUrl, lyrics, meta, ratio, bgPosition, audioDuration, frequencyBars, effect, effectDirection, visualizerStyle, style])
+  }), [imageUrl, audioUrl, lyrics, meta, ratio, bgPosition, audioDuration, frequencyBars, effect, effectDirection, visualizerStyle, style])
 
   const handleRender = useCallback(async () => {
     if (!canExport || exporting) return
@@ -231,16 +239,23 @@ export default function App() {
     setExportMsg(t('rendering'))
     try {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
+      // Freeze every input for this render so changing to the next song cannot
+      // mutate or reuse state from the completed render session.
+      const renderId = `LyricVideo-${Date.now()}-${++renderIdRef.current}`
+      const renderMeta = { ...meta }
+      const renderLyrics = lyrics.map((line) => ({ ...line }))
+      const renderBars = frequencyBars.map((bars) => new Uint8Array(bars))
       const url = await exportVideo({
+        renderId,
         bgUrl: imageUrl,
         audioVideoUrl,
         audioFile,
-        lyrics,
+        lyrics: renderLyrics,
         ratio,
         bgPosition,
-        meta,
+        meta: renderMeta,
         exportConfig,
-        frequencyBars,
+        frequencyBars: renderBars,
         effect,
         effectDirection,
         visualizerStyle,
@@ -591,7 +606,7 @@ export default function App() {
                   muted={muted}
                 />
               ) : ready ? (
-                <RemotionPlayer key={`${ratio}-${effect}-${style}`} inputProps={previewInputProps} duration={audioDuration || 180} />
+                <RemotionPlayer key={`${ratio}-${effect}-${style}-${audioLoadIdRef.current}`} inputProps={previewInputProps} duration={audioDuration || 180} />
               ) : freqLoading ? (
                 <div className="phone__placeholder">
                   <span>{t('computingFreq')}</span>

@@ -8,7 +8,7 @@ import { RippleCanvas } from '../RippleCanvas'
 import { SnowCanvas } from '../SnowCanvas'
 import { AmbientCanvas, isAmbientEffect } from '../AmbientCanvas'
 import { SpectrumVisualizer } from '../SpectrumVisualizer'
-import { fitTitleFontSize } from '../../utils/titleFont'
+import { fitTitleFontSize, splitTitleLines, truncateTextToWidth } from '../../utils/titleFont'
 
 const LAYOUT = { fontSizeActive: 44, fontSizeInactive: 34, lineHeight: 80 } as const
 
@@ -51,7 +51,10 @@ export const Normal16x9: React.FC<CompositionProps> = ({
 
   // Song info
   const titleFontSize = fitTitleFontSize(meta.title, Math.round(width * 0.032), leftW - pad * 2)
+  const titleLineHeight = Math.round(titleFontSize * 1.3)
+  const titleLines = splitTitleLines(meta.title, titleFontSize, leftW - pad * 2)
   const albumFontSize = Math.round(width * 0.02)
+  const albumText = truncateTextToWidth(meta.album, albumFontSize, leftW - pad * 2 - albumFontSize * 3.4)
   const songInfoH = Math.round(height * 0.12)
 
   // CD
@@ -243,10 +246,15 @@ export const Normal16x9: React.FC<CompositionProps> = ({
             fontSize: titleFontSize,
             fontWeight: 700,
             color: '#fff',
-            lineHeight: 1.3,
+            lineHeight: `${titleLineHeight}px`,
+            height: `${titleLineHeight * titleLines.length}px`,
             overflow: 'hidden',
           }}>
-            {meta.title}
+            {titleLines.map((line, index) => (
+              <span key={index} style={{ position: 'absolute', left: 0, top: index * titleLineHeight, width: '100%', height: titleLineHeight, lineHeight: `${titleLineHeight}px`, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                {line}
+              </span>
+            ))}
           </div>
           {meta.album && (
             <div data-name="song-album-row" style={{ display: 'flex', alignItems: 'center', marginTop: 4, width: '100%' }}>
@@ -257,10 +265,11 @@ export const Normal16x9: React.FC<CompositionProps> = ({
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
                 flex: 1,
+                minWidth: 0,
               }}>
-                {meta.album}
-                <svg data-name="album-chevron" width={Math.round(albumFontSize * 1.1)} height={Math.round(albumFontSize * 1.1)} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-0.15em', marginLeft: 2 }}><polyline points="9,6 15,12 9,18" /></svg>
+                {albumText}
               </div>
+              <svg data-name="album-chevron" width={Math.round(albumFontSize * 1.1)} height={Math.round(albumFontSize * 1.1)} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: 2 }}><polyline points="9,6 15,12 9,18" /></svg>
               <div data-name="vip-badge" style={{
                 flexShrink: 0,
                 padding: `${Math.round(albumFontSize * 0.08)}px ${Math.round(albumFontSize * 0.5)}px`,
