@@ -5,6 +5,7 @@ interface ThumbnailMakerProps {
   imageUrl: string
   lyrics: readonly LyricLine[]
   meta: LrcMeta
+  audioFileName: string
 }
 
 type GeminiSuggestion = {
@@ -16,7 +17,7 @@ const WIDTH = 1280
 const HEIGHT = 720
 const GOLD = '#efbd67'
 
-export function ThumbnailMaker({ imageUrl, lyrics, meta }: ThumbnailMakerProps) {
+export function ThumbnailMaker({ imageUrl, lyrics, meta, audioFileName }: ThumbnailMakerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [open, setOpen] = useState(true)
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('hoya-gemini-key') || '')
@@ -163,7 +164,8 @@ export function ThumbnailMaker({ imageUrl, lyrics, meta }: ThumbnailMakerProps) 
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${(title || 'HOYA-Sound').replace(/[\\/:*?"<>|]/g, '-')}-thumbnail.png`
+      const fileStem = audioFileName.replace(/\.[^.]+$/, '').replace(/[\\/:*?"<>|]/g, '-').trim() || 'HOYA-Sound'
+      a.download = `${fileStem}-썸네일.png`
       a.style.display = 'none'
       document.body.appendChild(a)
       a.click()
@@ -177,7 +179,7 @@ export function ThumbnailMaker({ imageUrl, lyrics, meta }: ThumbnailMakerProps) 
       console.error(error)
       setMessage('썸네일 저장에 실패했습니다. 다시 눌러 주세요.')
     }
-  }, [draw, imageUrl, title])
+  }, [draw, imageUrl, audioFileName])
 
   return (
     <section className="thumbnail-tool" aria-label="유튜브 썸네일 만들기">

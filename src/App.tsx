@@ -48,6 +48,11 @@ function fileStem(file: File) {
   return file.name.replace(/\.[^.]+$/, '').toLowerCase()
 }
 
+function downloadFileStem(file: File | null, fallback: string) {
+  const name = file?.name.replace(/\.[^.]+$/, '') || fallback
+  return name.replace(/[\\/:*?"<>|]/g, '-').trim() || fallback
+}
+
 function parentPath(file: File) {
   const path = relativeFilePath(file)
   return path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : ''
@@ -265,7 +270,7 @@ export default function App() {
       setPreviewUrl(url)
       const downloadLink = document.createElement('a')
       downloadLink.href = url
-      downloadLink.download = `${meta.title || 'lyric-video'}.mp4`
+      downloadLink.download = `${downloadFileStem(audioFileRef.current, meta.title || 'lyric-video')}.mp4`
       downloadLink.click()
       setExportMsg('')
     } catch (err) {
@@ -281,9 +286,9 @@ export default function App() {
     if (!previewUrl) return
     const a = document.createElement('a')
     a.href = previewUrl
-    a.download = `${meta.title || 'lyric-video'}.mp4`
+    a.download = `${downloadFileStem(audioFileRef.current, meta.title || 'lyric-video')}.mp4`
     a.click()
-  }, [previewUrl])
+  }, [previewUrl, meta.title])
 
   return (
     <div className="app">
@@ -588,7 +593,7 @@ export default function App() {
             )}
           </div>
           {exportMsg && !exporting && <p className="panel__status panel__status--error" role="status">{exportMsg}</p>}
-          <ThumbnailMaker imageUrl={imageUrl} lyrics={lyrics} meta={meta} />
+          <ThumbnailMaker imageUrl={imageUrl} lyrics={lyrics} meta={meta} audioFileName={audioFileRef.current?.name || ''} />
         </div>
 
         <div className="preview">
